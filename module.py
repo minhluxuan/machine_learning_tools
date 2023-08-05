@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression, Ridge, RidgeCV, Lasso, LassoCV
 from matplotlib import pyplot as plt
+from scipy.spatial.distance import cdist
 
 class ModelLinearRegression:
     def __init__(self, X, y, train_size):
@@ -118,7 +119,7 @@ class ModelLassoRegression:
         return fig
     
     def formula(self):
-        formula_text = f"{self.intercept} "
+        formula_text = f"{self.intercept}"
         for i in range(0, self.X.shape[1]):
             index = f"{{{i+1}}}"
             formula_text += (f"+ {self.coef[i]} .x_{index}") if self.coef[i] > 0 else (f" {self.coef[i]} .x_{index}")
@@ -174,3 +175,7 @@ class ModelPolynomialRegression:
             index = f"{{{i+1}}}"
             formula_text += (f"+ {self.coef[i]} .x_{index}") if self.coef[i] > 0 else (f" {self.coef[i]} .x_{index}")
         return formula_text
+    
+def kmeans_assign_labels(X, centroids):
+        dists = cdist(X, centroids)
+        return np.argmin(dists, axis=1)

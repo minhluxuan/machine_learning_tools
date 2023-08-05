@@ -1,7 +1,18 @@
 import streamlit as st
+from streamlit_drawable_canvas import st_canvas
 import pandas as pd
-from module import ModelLinearRegression, ModelRidgeRegression, ModelLassoRegression, ModelPolynomialRegression
+from module import ModelLinearRegression, ModelRidgeRegression, ModelLassoRegression, ModelPolynomialRegression, kmeans_assign_labels
 from sklearn.datasets import load_diabetes, fetch_california_housing, load_wine
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import numpy as np
+from PIL import Image
+# from mnist_centroids import centroids
+import pickle
+
 def regression():
     datasets = {
         "Diabetes": load_diabetes,
@@ -77,14 +88,94 @@ def regression():
         st.write("Độ chính xác trên tập kiểm tra:")
         st.latex(f"{model.score}")
     if apply_button:
-        show_result()         
+        show_result()
+
 def kmeans():
     pass
+
+def digits_recognition():
+    # mnist = fetch_openml(name="mnist_784", version=1, parser='auto')
+    # X, y = mnist["data"].astype('float32') / 255.0, mnist["target"].astype(int)
+
+    model_selected = st.selectbox("Chọn mô hình", ["K lân cận", "K-means", "Mạng nơ ron nhân tạo"])
+    
+    col1, col2 = st.columns(2)
+    with open("mnist_trained_model.pkl", "rb") as file:
+        model = pickle.load(file)
+    with open("kmeans.pkl", "rb") as file:
+        centroids = pickle.load(file)
+    with col1:
+        st.header("Chữ viết tay")
+        canvas_result = st_canvas(
+            fill_color="black",  # Màu nền khung vẽ
+            stroke_width=30,  # Độ dày của nét vẽ
+            stroke_color="white",  # Màu nét vẽ
+            background_color="black",  # Màu nền trang web
+            width=300,
+            height=300,
+            drawing_mode="freedraw",
+            key="canvas",
+        )
+        if canvas_result.image_data is not None:
+            image_array = np.array(canvas_result.image_data)
+            image = Image.fromarray(image_array)
+            new_size = (28, 28)
+            image_resized = image.resize(new_size, Image.LANCZOS)
+            image_resized_grayscaled_flatten_array = np.array(image_resized.convert("L")).flatten()
+            # Normalize and reshape the image data
+            input_data = image_resized_grayscaled_flatten_array.astype('float32') / 255.0
+            input_data = np.expand_dims(input_data, axis=0)
+            # Predict the digit using the pre-trained model
+            if model_selected == "Mạng nơ ron nhân tạo":
+                prediction = model.predict(input_data)
+                predicted_label = np.argmax(prediction[0])
+            elif model_selected == "K-means":
+                digits = [9,1,4,7,3,6,0,5,4,2]
+                predicted_label = digits[kmeans_assign_labels([image_resized_grayscaled_flatten_array], centroids)[0]]
+            # elif model_selected == "K lân cận":
+            #     knn = KNeighborsClassifier(n_neighbors=5, weights=lambda distance: np.exp(-distance**2/.4))
+            #     knn.fit(X, y)
+            #     predicted_label = knn.predict([image_resized_grayscaled_flatten_array])
+    with col2:
+        st.header("Kết quả dự đoán")
+        st.write(f'## {predicted_label}')
+        # You can also display the confidence/probability of the prediction
+        # st.write(f'Độ tin cậy: {prediction[0][predicted_label]:.2f}')
+
+def spam_detection():
+    df = pd.read_csv("../data/spam.csv", nrows=3000)
+    msg = np.array(list(df['Message']))
+    with open('spam_detection.pkl', 'rb') as file:
+        loaded_model = pickle.load(file)
+
+    vectorizer = CountVectorizer()
+    vectorizer.fit_transform(msg)
+    vocabs = vectorizer.vocabulary_
+
+    message = st.text_area("Nhập vào tin nhắn tiếng Anh:")
+    check_button = st.button("Kiểm tra")
+
+    if check_button:
+        vectorizer = CountVectorizer(vocabulary=vocabs)
+        transformed_message_array = vectorizer.fit_transform([message]).toarray()
+        predicted_category = loaded_model.predict(transformed_message_array)
+        status = "Thư rác" if predicted_category == 1 else "Không phải thư rác"
+        st.write(status)
+
+from sklearn.datasets import fetch_openml
+from sklearn.cluster import KMeans, MiniBatchKMeans
+
+def test():
+    pass
+
 
 def main():
     pages = {
         "Hồi quy": regression,
-        "K-Means": kmeans
+        "K-Means": kmeans,
+        "Nhận diện chữ số": digits_recognition,
+        "Kiểm tra tin nhắn rác": spam_detection,
+        "Test": test
     }
     st.title("Alpha Solutions Lab")
     st.sidebar.title("Machine Learning Tools")
