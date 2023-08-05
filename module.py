@@ -173,7 +173,7 @@ class ModelPolynomialRegression:
         formula_text = f"{self.intercept} "
         for i in range(1, self.degree+1):
             index = f"{{{i+1}}}"
-            formula_text += (f"+ {self.coef[i]} .x_{index}") if self.coef[i] > 0 else (f" {self.coef[i]} .x_{index}")
+            formula_text += (f"+ {self.coef[i]} .x^{index}") if self.coef[i] > 0 else (f" {self.coef[i]} .x^{index}")
         return formula_text
     
 def kmeans_assign_labels(X, centroids):

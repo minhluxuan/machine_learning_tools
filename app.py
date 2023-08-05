@@ -97,12 +97,12 @@ def digits_recognition():
     # mnist = fetch_openml(name="mnist_784", version=1, parser='auto')
     # X, y = mnist["data"].astype('float32') / 255.0, mnist["target"].astype(int)
 
-    model_selected = st.selectbox("Chọn mô hình", ["K lân cận", "K-means", "Mạng nơ ron nhân tạo"])
-    
+    model_selected = st.selectbox("Chọn mô hình", ["K-means", "Mạng nơ ron nhân tạo"])
+    st.write("Khuyến khích sử dụng mô hình Mạnh nơ ron nhân tạo.")
     col1, col2 = st.columns(2)
-    with open("mnist_trained_model.pkl", "rb") as file:
+    with open("trained_models/mnist/ann.pkl", "rb") as file:
         model = pickle.load(file)
-    with open("kmeans.pkl", "rb") as file:
+    with open("trained_models/mnist/kmeans.pkl", "rb") as file:
         centroids = pickle.load(file)
     with col1:
         st.header("Chữ viết tay")
@@ -116,6 +116,7 @@ def digits_recognition():
             drawing_mode="freedraw",
             key="canvas",
         )
+        st.write("Viết chữ số từ 0-9")
         if canvas_result.image_data is not None:
             image_array = np.array(canvas_result.image_data)
             image = Image.fromarray(image_array)
@@ -132,10 +133,6 @@ def digits_recognition():
             elif model_selected == "K-means":
                 digits = [9,1,4,7,3,6,0,5,4,2]
                 predicted_label = digits[kmeans_assign_labels([image_resized_grayscaled_flatten_array], centroids)[0]]
-            # elif model_selected == "K lân cận":
-            #     knn = KNeighborsClassifier(n_neighbors=5, weights=lambda distance: np.exp(-distance**2/.4))
-            #     knn.fit(X, y)
-            #     predicted_label = knn.predict([image_resized_grayscaled_flatten_array])
     with col2:
         st.header("Kết quả dự đoán")
         st.write(f'## {predicted_label}')
@@ -143,9 +140,9 @@ def digits_recognition():
         # st.write(f'Độ tin cậy: {prediction[0][predicted_label]:.2f}')
 
 def spam_detection():
-    df = pd.read_csv("../data/spam.csv", nrows=3000)
+    df = pd.read_csv("./data/spam.csv", nrows=3000)
     msg = np.array(list(df['Message']))
-    with open('spam_detection.pkl', 'rb') as file:
+    with open('trained_models/spam_detection/spam_detection.pkl', 'rb') as file:
         loaded_model = pickle.load(file)
 
     vectorizer = CountVectorizer()
